@@ -131,7 +131,7 @@ class RoundController extends Controller
 
         // Can only rob 2 times per game
         // If no mafias alive, inherits mafia's role and can kill
-        // TODO: Don't rob the same user twice
+        // Can't rob the same user twice
         // Thief can rob one person per night 
         if (!$this->robbedId && $aliveThief) {
             if (!$mafiaCount) {
@@ -157,9 +157,7 @@ class RoundController extends Controller
      */
     private function processDetectiveAction(Game $game, ?User $aliveDetective, Collection $aliveUsers): void
     {
-        //TODO: Don't investigate same person twice
-        //TODO: Can select to reveal himself after investigating someone (will be killed by mafia next the night)
-        // Detective can investigate one  per night
+        // Detective can investigate one person per night
         if (!$this->investigatedId && $aliveDetective) {
             $isRobbed = $game->rounds()->where('robbed', $aliveDetective)->get()->count();
             if (!$isRobbed) {
