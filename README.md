@@ -70,8 +70,13 @@ Before you begin, ensure you have the following dependencies installed on your m
     ```bash
     php artisan migrate --seed
     ```
+8. Create symbolic link
 
-8. Start the development server:
+    ```
+    php artisan storage:link
+    ```
+
+9. Start the development server:
 
     ```bash
     php artisan serve
