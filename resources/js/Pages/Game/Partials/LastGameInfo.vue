@@ -22,6 +22,7 @@ console.log( usePage().props.auth.user)
             <h1 class="text-2xl font-medium text-gray-900 dark:text-gray-100 mt-6" v-else> Better luck next time!</h1>
             
             <p class="text-lg text-gray-700 dark:text-gray-300 mt-6">The <strong>{{lastGame.title}}</strong> game was won by Team {{lastGame.winner_team}}.</p>
+            <p class="text-lg text-gray-700 dark:text-gray-300 mt-6">Total Wins: {{ user.wins }} | Total Defeats: {{ user.defeats }}</p>
         </header>
 
     </section>

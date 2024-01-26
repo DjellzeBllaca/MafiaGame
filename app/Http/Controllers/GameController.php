@@ -56,7 +56,7 @@ class GameController extends Controller
     /**
      * Start a new game with the specified title.
      */
-    public function start(CreateGameRequest $request):RedirectResponse
+    public function start(CreateGameRequest $request): RedirectResponse
     {
         // Validate the incoming request
         $validated = $request->validated();
@@ -66,7 +66,10 @@ class GameController extends Controller
         $game = $user->games()->create(['title' => $validated['title']]);
 
         // Get a collection of bots and the user, shuffle them
-        $bots = User::whereNull('password')->take(9)->get();
+        $bots = User::whereNull('password')->take(90)->get();
+        if ($bots->count() < 9) {
+            return redirect()->route('dashboard')->with('error', 'Not enough bot users.');
+        }
         $players = $bots->merge([$user])->shuffle();
         $roles = Role::all();
 
@@ -79,9 +82,9 @@ class GameController extends Controller
 
             foreach ($usersToAssign as $player) {
                 $game->users()->attach($player->id, [
-                    'role_id' => $role->id, 
+                    'role_id' => $role->id,
                     'status' => 1,
-                    'created_at' => now(), 
+                    'created_at' => now(),
                     'updated_at' => now()
                 ]);
 

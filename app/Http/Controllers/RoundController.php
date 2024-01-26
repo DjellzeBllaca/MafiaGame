@@ -43,7 +43,7 @@ class RoundController extends Controller
         }
 
         $round = $this->createRound($game, $type);
-        $this->updateGameAndUserStatus($game, $villagersCount, $allMafiaCount);
+        $this->updateGameAndUserStatus($user, $game, $villagersCount, $allMafiaCount);
 
         return redirect()->route('dashboard');
     }
@@ -81,7 +81,7 @@ class RoundController extends Controller
      */
     private function processUserNightAction(User $user, ?int $selectedId = 0, int $mafiaCount): void
     {
-        if ($user->is_alive) {
+        if (!$user->is_alive) {
             return;
         }
 
@@ -222,41 +222,72 @@ class RoundController extends Controller
     /**
      * Update game and user statuses based on night and day actions.
      */
-    private function updateGameAndUserStatus(Game $game, int &$villagersCount, int &$allMafiaCount): void
+    private function updateGameAndUserStatus(User $user, Game $game, int &$villagersCount, int &$allMafiaCount): void
     {
-        $user = GameUser::where('game_id', $game->id);
+        $gameUser = GameUser::where('game_id', $game->id);
+
         if ($this->killedId) {
-            $user = $user->where('user_id', $this->killedId)->first();
+            $this->updateStatusForKilled($user, $gameUser, $villagersCount, $allMafiaCount, $game);
+        } elseif ($this->votedId) {
+            $this->updateStatusForVoted($user, $gameUser, $villagersCount, $allMafiaCount, $game);
+        }
+    }
 
-            if ($this->savedId != $this->killedId) {
-                $user->status = 0;
-                $villagersCount--;
-            }
+    private function updateStatusForKilled($user, $gameUser, &$villagersCount, &$allMafiaCount, $game): void
+    {
+        $gameUser = $gameUser->where('user_id', $this->killedId)->first();
 
-            if ($allMafiaCount > $villagersCount) {
-                $game->winner_team = Game::TEAM_MAFIA;
-                $game->save();
-            }
-            $user->save();
-        } else if ($this->votedId) {
-            $user = $user->where('user_id', $this->votedId)->first();
+        if ($this->savedId != $this->killedId) {
+            $gameUser->status = 0;
+            $villagersCount--;
+        }
 
-            if ($user->role->team === Role::TEAM_VILLAGE) {
-                $villagersCount--;
+        $this->checkWinnerAndStats($user, $game, $villagersCount, $allMafiaCount);
+        $gameUser->save();
+    }
+
+    private function updateStatusForVoted($user, $gameUser, &$villagersCount, &$allMafiaCount, $game): void
+    {
+        $gameUser = $gameUser->where('user_id', $this->votedId)->first();
+
+        $this->updateCountersBasedOnRole($gameUser->role, $villagersCount, $allMafiaCount);
+
+        $this->checkWinnerAndStats($user, $game, $villagersCount, $allMafiaCount);
+        $gameUser->status = 0;
+        $gameUser->save();
+    }
+
+    private function updateCountersBasedOnRole($role, &$villagersCount, &$allMafiaCount): void
+    {
+        if ($role->team === Role::TEAM_VILLAGE) {
+            $villagersCount--;
+        } else {
+            $allMafiaCount--;
+        }
+    }
+
+    private function checkWinnerAndStats(User $user, $game, $villagersCount, $allMafiaCount): void
+    {
+        if ($allMafiaCount == 0) {
+            $game->winner_team = Game::TEAM_VILLAGE;
+            if ($user->team === $game->winner_team) {
+                $user->wins++;
             } else {
-                $allMafiaCount--;
+                $user->defeats++;
             }
 
-            if ($allMafiaCount == 0) {
-                $game->winner_team = Game::TEAM_VILLAGE;
-                $game->save();
-            } elseif ($allMafiaCount > $villagersCount) {
-                $game->winner_team = Game::TEAM_MAFIA;
-                $game->save();
+            $user->save();
+        } elseif ($allMafiaCount > $villagersCount) {
+            $game->winner_team = Game::TEAM_MAFIA;
+            if ($user->team === $game->winner_team) {
+                $user->wins++;
+            } else {
+                $user->defeats++;
             }
 
-            $user->status = 0;
             $user->save();
         }
+
+        $game->save();
     }
 }
