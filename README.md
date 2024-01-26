@@ -20,7 +20,7 @@ The Mafia Game is an online version of the popular social deduction game where p
 
 Before you begin, ensure you have the following dependencies installed on your machine:
 
-- [PHP](https://www.php.net/) (version X.X.X)
+- [PHP](https://www.php.net/) (version ^8.1)
 - [Composer](https://getcomposer.org/)
 - [Node.js](https://nodejs.org/)
 - [npm](https://www.npmjs.com/)
